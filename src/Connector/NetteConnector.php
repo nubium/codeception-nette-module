@@ -46,9 +46,16 @@ class NetteConnector extends Client
         $_SERVER = $request->getServer();
         $_FILES = $request->getFiles();
 
+        $_SERVER['HTTP_HOST'] = parse_url($request->getUri(), PHP_URL_HOST);
         $_SERVER['REQUEST_METHOD'] = $method = strtoupper($request->getMethod());
-        $_SERVER['REQUEST_URI'] = str_replace('http://localhost', '', $request->getUri());
+        $_SERVER['REQUEST_URI'] = preg_replace('~https?://[^/]+~', '', $request->getUri());
         $_SERVER['REMOTE_ADDR'] = '127.0.0.1';
+
+        \Ulozto\Files\FilesSimpleModel::$files = [];
+        \Ulozto\Files\FoldersSimpleModel::$folders = [
+            'users' => [],
+        ];
+        \Nodus\Live\Models\LiveSheetModel::$videos = [];
 
         if ($method === 'HEAD' || $method === 'GET') {
             $_GET = $request->getParameters();
