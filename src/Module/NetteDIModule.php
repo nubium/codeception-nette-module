@@ -103,10 +103,10 @@ class NetteDIModule extends Module
     /**
      * @return Container
      */
-    public function getContainer()
+    public function getContainer(TestInterface $test)
     {
         if (!$this->container) {
-            $this->createContainer();
+            $this->createContainer($test);
         }
 
         return $this->container;
@@ -126,9 +126,11 @@ class NetteDIModule extends Module
         }
     }
 
-    private function createContainer()
+    private function createContainer(TestInterface $test)
     {
-        $configurator = new $this->config['configurator']();
+        $config = $test->getMetadata()->getParam('config');
+
+        $configurator = $this->createConfigurator($test);
         if ($this->config['removeDefaultExtensions']) {
             $configurator->defaultExtensions = [
                 'extensions' => 'Nette\DI\Extensions\ExtensionsExtension',
@@ -140,11 +142,6 @@ class NetteDIModule extends Module
             FileSystem::createDir($logDir);
             $configurator->enableDebugger($logDir);
         }
-
-        $configurator->addParameters([
-            'appDir' => $this->path.($this->config['appDir'] ? '/'.$this->config['appDir'] : ''),
-            'wwwDir' => $this->path.($this->config['wwwDir'] ? '/'.$this->config['wwwDir'] : ''),
-        ]);
 
         $tempDir = $this->path.'/'.$this->config['tempDir'];
         FileSystem::delete($tempDir);
@@ -160,10 +157,63 @@ class NetteDIModule extends Module
             $configurator->addConfig($this->path.'/'.$file);
         }
 
+        // specific test custom config
+        if (is_array($config)) {
+            foreach ($config as $configItem) {
+                if ($configItem === "") {
+                    $filename = substr($test->getMetadata()->getFilename(), 0, -4).'.neon';
+                    $configurator->addConfig($filename);
+                } else {
+                    $items = explode(' ', $configItem);
+                    $filename = dirname($test->getMetadata()->getFilename()) . '/' . array_pop($items);
+                    $configurator->addConfig($filename);
+                }
+            }
+        }
+
         $this->container = $configurator->createContainer();
 
         foreach ($this->onCreateContainer as $callback) {
             $callback($this->container);
         }
     }
+
+    private function createConfigurator(TestInterface $test): Configurator
+    {
+        $appAnnotation = $test->getMetadata()->getParam('app');
+        $application = is_array($appAnnotation) ? $appAnnotation[0] : 'ulozto';
+
+        switch ($application) {
+
+            case 'pornfile':
+                $configurator = new \Pornfile\Application\Configurator(true);
+                $configurator->addParameters([
+                    'appDir' => WWW_DIR . '/PornFile/App',
+                    'wwwDir' => WWW_DIR,
+                ]);
+                break;
+
+            case 'admin':
+                $configurator = new \Admin\Application\Configurator(true);
+                $configurator->addParameters([
+                    'appDir' => WWW_DIR . '/Admin/App',
+                    'wwwDir' => WWW_DIR,
+                ]);
+                break;
+
+            case '':
+            case 'ulozto':
+                $configurator = new \Ulozto\Application\Configurator(true);
+                $configurator->addParameters([
+                'appDir' => WWW_DIR . '/Ulozto/App',
+                'wwwDir' => WWW_DIR,
+            ]);
+            break;
+
+            default:
+                throw new \InvalidArgumentException('Unknown application code: '.$application. '. Allowed values are ulozto, pornfile, admin.');
+        }
+        return $configurator;
+    }
+
 }

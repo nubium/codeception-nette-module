@@ -12,9 +12,13 @@ namespace Arachne\Codeception\Module;
 
 use Arachne\Codeception\Connector\NetteConnector;
 use Codeception\Lib\Framework;
+use Codeception\Scenario;
+use Codeception\Test\Interfaces\ScenarioDriven;
 use Codeception\TestInterface;
+use Nette\Caching\Storages\FileStorage;
 use Nette\Http\IRequest;
 use Nette\Http\IResponse;
+use Nette\Loaders\RobotLoader;
 
 /**
  * @author Jáchym Toušek <enumag@gmail.com>
@@ -37,10 +41,14 @@ class NetteApplicationModule extends Framework
 
     public function _before(TestInterface $test)
     {
+         $scenario = null;
+        if ($test instanceof ScenarioDriven) {
+            $scenario = $test->getScenario();
+        }
         $this->configFiles = null;
         $this->client = new NetteConnector();
-        $this->client->setContainerAccessor(function () {
-            return $this->getModule(NetteDIModule::class)->getContainer();
+        $this->client->setContainerAccessor(function () use ($test) {
+            return $this->getModule(NetteDIModule::class)->getContainer($test);
         });
         $this->client->followRedirects($this->config['followRedirects']);
 
@@ -84,5 +92,13 @@ class NetteApplicationModule extends Framework
     public function debugContent()
     {
         $this->debugSection('Content', $this->client->getInternalResponse()->getContent());
+    }
+
+    /**
+     * @return string
+     */
+    public function grabResponseContent()
+    {
+        return $this->client->getInternalResponse()->getContent();
     }
 }
