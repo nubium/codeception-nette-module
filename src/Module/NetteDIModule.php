@@ -88,7 +88,7 @@ class NetteDIModule extends Module
             } catch (MissingServiceException $e) {
             }
 
-            FileSystem::delete(realpath($this->container->getParameters()['tempDir']));
+//            FileSystem::delete(realpath($this->container->getParameters()['tempDir']));
         }
     }
 
@@ -143,10 +143,10 @@ class NetteDIModule extends Module
             $configurator->enableDebugger($logDir);
         }
 
-        $tempDir = $this->path.'/'.$this->config['tempDir'];
-        FileSystem::delete($tempDir);
-        FileSystem::createDir($tempDir);
-        $configurator->setTempDirectory($tempDir);
+//        $tempDir = $this->path.'/'.$this->config['tempDir'];
+//        FileSystem::delete($tempDir);
+//        FileSystem::createDir($tempDir);
+//        $configurator->setTempDirectory($tempDir);
 
         if ($this->config['debugMode'] !== null) {
             $configurator->setDebugMode($this->config['debugMode']);
@@ -187,6 +187,7 @@ class NetteDIModule extends Module
 
             case 'pornfile':
                 $configurator = new \Pornfile\Application\Configurator(true);
+                $configurator->enableDebugger(WWW_DIR . '/PornFile/log');
                 $configurator->addParameters([
                     'appDir' => WWW_DIR . '/PornFile/App',
                     'wwwDir' => WWW_DIR,
@@ -195,6 +196,7 @@ class NetteDIModule extends Module
 
             case 'admin':
                 $configurator = new \Admin\Application\Configurator(true);
+                $configurator->enableDebugger(WWW_DIR . '/Admin/log');
                 $configurator->addParameters([
                     'appDir' => WWW_DIR . '/Admin/App',
                     'wwwDir' => WWW_DIR,
@@ -204,6 +206,7 @@ class NetteDIModule extends Module
             case '':
             case 'ulozto':
                 $configurator = new \Ulozto\Application\Configurator(true);
+                $configurator->enableDebugger(WWW_DIR . '/Ulozto/log');
                 $configurator->addParameters([
                 'appDir' => WWW_DIR . '/Ulozto/App',
                 'wwwDir' => WWW_DIR,
