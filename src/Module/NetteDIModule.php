@@ -203,6 +203,14 @@ class NetteDIModule extends Module
                 ]);
                 break;
 
+            case 'api':
+                $configurator = new \Api\Application\Configurator(true);
+                $configurator->enableDebugger(WWW_DIR . '/Api/log');
+                $configurator->addParameters([
+                    'appDir' => WWW_DIR . '/Api/App',
+                    'wwwDir' => WWW_DIR,
+                ]);
+                break;
             case '':
             case 'ulozto':
                 $configurator = new \Ulozto\Application\Configurator(true);
@@ -214,7 +222,7 @@ class NetteDIModule extends Module
             break;
 
             default:
-                throw new \InvalidArgumentException('Unknown application code: '.$application. '. Allowed values are ulozto, pornfile, admin.');
+                throw new \InvalidArgumentException('Unknown application code: '.$application. '. Allowed values are ulozto, pornfile, admin, api.');
         }
         return $configurator;
     }
