@@ -12,6 +12,7 @@ namespace Arachne\Codeception\Module;
 
 use Arachne\Codeception\Connector\NetteConnector;
 use Codeception\Lib\Framework;
+use Codeception\Module\Nette;
 use Codeception\Scenario;
 use Codeception\Test\Interfaces\ScenarioDriven;
 use Codeception\TestInterface;
@@ -19,6 +20,7 @@ use Nette\Caching\Storages\FileStorage;
 use Nette\Http\IRequest;
 use Nette\Http\IResponse;
 use Nette\Loaders\RobotLoader;
+use Tests\Functional\Support\SignedNetteConnector;
 
 /**
  * @author Jáchym Toušek <enumag@gmail.com>
@@ -29,10 +31,19 @@ class NetteApplicationModule extends Framework
         'followRedirects' => true,
     ];
 
+    protected $requiredFields = ['internalDomains'];
+
     /**
      * @var string
      */
     private $path;
+
+    public function _initialize()
+    {
+        parent::_initialize();
+
+        $this->internalDomains = $this->config['internalDomains'];
+    }
 
     public function _beforeSuite($settings = [])
     {
@@ -41,18 +52,18 @@ class NetteApplicationModule extends Framework
 
     public function _before(TestInterface $test)
     {
-         $scenario = null;
-        if ($test instanceof ScenarioDriven) {
-            $scenario = $test->getScenario();
-        }
         $this->configFiles = null;
-        $this->client = new NetteConnector();
+        $this->client = $this->createNetteConnector();
         $this->client->setContainerAccessor(function () use ($test) {
             return $this->getModule(NetteDIModule::class)->getContainer($test);
         });
         $this->client->followRedirects($this->config['followRedirects']);
 
         parent::_before($test);
+    }
+
+    protected function createNetteConnector():NetteConnector {
+        return new NetteConnector();
     }
 
     public function _after(TestInterface $test)
