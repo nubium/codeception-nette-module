@@ -14,6 +14,7 @@ use Arachne\Codeception\Http\Request as HttpRequest;
 use Arachne\Codeception\Http\Response as HttpResponse;
 use Exception;
 use Nette\Application\Application;
+use Nette\DI\Container;
 use Nette\Http\IRequest;
 use Nette\Http\IResponse;
 use Symfony\Component\BrowserKit\Client;
@@ -30,9 +31,19 @@ class NetteConnector extends Client
      */
     protected $containerAccessor;
 
+    /**
+     * @var array
+     */
+    private $overridenServices = [];
+
     public function setContainerAccessor(callable $containerAccessor)
     {
         $this->containerAccessor = $containerAccessor;
+    }
+
+    public function setOverridenServices(array $overridenServices)
+    {
+        $this->overridenServices = $overridenServices;
     }
 
     /**
@@ -65,7 +76,16 @@ class NetteConnector extends Client
             $_POST = $request->getParameters();
         }
 
+        /** @var Container $container */
         $container = call_user_func($this->containerAccessor);
+
+        // Services to override
+        foreach ($this->overridenServices as $name => $service) {
+            if ($container->hasService($name)) {
+                $container->removeService($name);
+            }
+            $container->addService($name, $service);
+        }
 
         $httpRequest = $container->getByType(IRequest::class);
         $httpResponse = $container->getByType(IResponse::class);
@@ -90,3 +110,4 @@ class NetteConnector extends Client
         return new Response($content, $code, $headers);
     }
 }
+

@@ -11,6 +11,7 @@
 namespace Arachne\Codeception\Module;
 
 use Codeception\Module;
+use Codeception\Step;
 use Codeception\TestInterface;
 use Nette\Caching\Storages\IJournal;
 use Nette\Caching\Storages\SQLiteJournal;
@@ -67,6 +68,28 @@ class NetteDIModule extends Module
         $tempDir = $this->path.'/'.$this->config['tempDir'];
         FileSystem::delete(realpath($tempDir));
         FileSystem::createDir($tempDir);
+    }
+
+    public function _afterStep(Step $step)
+    {
+        if (is_null($this->container)) {
+            return;
+        }
+
+//		if ($this->container) {
+//			try {
+//				$this->container->getByType(Session::class)->close();
+//				session_write_close();
+//			} catch (MissingServiceException $e) {
+//			}
+//		}
+
+        // session has to be stopped forcefully - static variable gets shared between requests otherwise
+//        $reflClass = new \ReflectionClass(Session::class);
+//        $reflProp = $reflClass->getProperty('started');
+//        $reflProp->setAccessible(true);
+//        $reflProp->setValue(false);
+
         $this->container = null;
     }
 
@@ -74,7 +97,10 @@ class NetteDIModule extends Module
     {
         if ($this->container) {
             try {
-                $this->container->getByType(Session::class)->close();
+                $session = $this->container->getByType(Session::class);
+                if ($session->isStarted()) {
+                    $session->destroy();
+                }
             } catch (MissingServiceException $e) {
             }
 
@@ -103,7 +129,7 @@ class NetteDIModule extends Module
     /**
      * @return Container
      */
-    public function getContainer(TestInterface $test)
+    public function getContainer(TestInterface $test):Container
     {
         if (!$this->container) {
             $this->createContainer($test);
@@ -126,7 +152,7 @@ class NetteDIModule extends Module
         }
     }
 
-    private function createContainer(TestInterface $test)
+    public function createContainer(TestInterface $test):Container
     {
         $config = $test->getMetadata()->getParam('config');
 
@@ -176,6 +202,8 @@ class NetteDIModule extends Module
         foreach ($this->onCreateContainer as $callback) {
             $callback($this->container);
         }
+
+        return $this->container;
     }
 
     private function createConfigurator(TestInterface $test): Configurator
@@ -186,7 +214,7 @@ class NetteDIModule extends Module
         switch ($application) {
 
             case 'pornfile':
-                $configurator = new \Pornfile\Application\Configurator(true);
+                $configurator = new \PornFile\Application\Configurator(true);
                 $configurator->enableDebugger(WWW_DIR . '/PornFile/log');
                 $configurator->addParameters([
                     'appDir' => WWW_DIR . '/PornFile/App',
@@ -224,6 +252,8 @@ class NetteDIModule extends Module
             default:
                 throw new \InvalidArgumentException('Unknown application code: '.$application. '. Allowed values are ulozto, pornfile, admin, api.');
         }
+
+        error_reporting(E_ALL ^ E_USER_DEPRECATED);
         return $configurator;
     }
 
