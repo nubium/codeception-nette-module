@@ -14,6 +14,7 @@ use Arachne\Codeception\Connector\NetteConnector;
 use Codeception\Lib\Framework;
 use Codeception\Module\Nette;
 use Codeception\Scenario;
+use Codeception\Step;
 use Codeception\Test\Interfaces\ScenarioDriven;
 use Codeception\TestInterface;
 use Nette\Caching\Storages\FileStorage;
@@ -33,6 +34,8 @@ class NetteApplicationModule extends Framework
 
     protected $requiredFields = ['internalDomains'];
 
+    protected $overridenServices = [];
+
     /**
      * @var string
      */
@@ -43,6 +46,13 @@ class NetteApplicationModule extends Framework
         parent::_initialize();
 
         $this->internalDomains = $this->config['internalDomains'];
+    }
+
+    public function _beforeStep(Step $step)
+    {
+        parent::_beforeStep($step);
+
+        $this->client->setOverridenServices($this->overridenServices);
     }
 
     public function _beforeSuite($settings = [])
@@ -75,6 +85,8 @@ class NetteApplicationModule extends Framework
         $_POST = [];
         $_FILES = [];
         $_COOKIE = [];
+
+        $this->overridenServices = [];
     }
 
     /**
@@ -111,5 +123,19 @@ class NetteApplicationModule extends Framework
     public function grabResponseContent()
     {
         return $this->client->getInternalResponse()->getContent();
+    }
+
+    /**
+     * @param string $name
+     * @param mixed|null $fakeService
+     */
+    public function overrideContainerService($name, $fakeService = null)
+    {
+        if (is_null($fakeService) && isset($this->services[$name])) {
+            unset($this->overridenServices[$name]);
+
+            return;
+        }
+        $this->overridenServices[$name] = $fakeService;
     }
 }
