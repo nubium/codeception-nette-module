@@ -20,6 +20,7 @@ use Nette\DI\Container;
 use Nette\DI\MissingServiceException;
 use Nette\Http\Session;
 use Nette\Utils\FileSystem;
+use Nodus\Diagnostics\Debugger;
 use ReflectionProperty;
 
 class NetteDIModule extends Module
@@ -75,20 +76,6 @@ class NetteDIModule extends Module
         if (is_null($this->container)) {
             return;
         }
-
-//		if ($this->container) {
-//			try {
-//				$this->container->getByType(Session::class)->close();
-//				session_write_close();
-//			} catch (MissingServiceException $e) {
-//			}
-//		}
-
-        // session has to be stopped forcefully - static variable gets shared between requests otherwise
-//        $reflClass = new \ReflectionClass(Session::class);
-//        $reflProp = $reflClass->getProperty('started');
-//        $reflProp->setAccessible(true);
-//        $reflProp->setValue(false);
 
         $this->container = null;
     }
