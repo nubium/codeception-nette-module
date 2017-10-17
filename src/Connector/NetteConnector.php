@@ -53,9 +53,14 @@ class NetteConnector extends Client
      */
     public function doRequest($request)
     {
+        $originScriptName = $_SERVER['SCRIPT_NAME'];
+
         $_COOKIE = $request->getCookies();
         $_SERVER = $request->getServer();
         $_FILES = $request->getFiles();
+
+        // see https://github.com/sebastianbergmann/phpunit/blob/cdcb7376a773beac6dd0cd4b38bb5901e8534035/src/Util/Filter.php#L31
+        $_SERVER['SCRIPT_NAME'] = $originScriptName;
 
         $_SERVER['HTTP_HOST'] = parse_url($request->getUri(), PHP_URL_HOST);
         $_SERVER['REQUEST_METHOD'] = $method = strtoupper($request->getMethod());
@@ -68,7 +73,7 @@ class NetteConnector extends Client
         ];
         \Nodus\Live\Models\LiveSheetModel::$videos = [];
 
-        if ($method === 'HEAD' || $method === 'GET') {
+        if ($method === IRequest::HEAD || $method === IRequest::GET) {
             $_GET = $request->getParameters();
             $_POST = [];
         } else {
