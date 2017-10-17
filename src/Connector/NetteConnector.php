@@ -73,10 +73,11 @@ class NetteConnector extends Client
         ];
         \Nodus\Live\Models\LiveSheetModel::$videos = [];
 
+        \Arachne\Codeception\Http\Request::$rawContent = $request->getContent();
         if ($method === IRequest::HEAD || $method === IRequest::GET) {
             $_GET = $request->getParameters();
             $_POST = [];
-        } else {
+        } elseif ($method === IRequest::POST || $method === IRequest::PATCH) {
             $_GET = [];
             $_POST = $request->getParameters();
         }

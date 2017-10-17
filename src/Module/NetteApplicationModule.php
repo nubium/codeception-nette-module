@@ -11,6 +11,7 @@
 namespace Arachne\Codeception\Module;
 
 use Arachne\Codeception\Connector\NetteConnector;
+use Codeception\Exception\ExternalUrlException;
 use Codeception\Lib\Framework;
 use Codeception\Module\Nette;
 use Codeception\Scenario;
@@ -21,6 +22,7 @@ use Nette\Caching\Storages\FileStorage;
 use Nette\Http\IRequest;
 use Nette\Http\IResponse;
 use Nette\Loaders\RobotLoader;
+use Symfony\Component\DomCrawler\Crawler;
 use Tests\Functional\Support\SignedNetteConnector;
 
 /**
@@ -36,16 +38,20 @@ class NetteApplicationModule extends Framework
 
     protected $overridenServices = [];
 
+    protected $activeApplication = null;
+
     /**
      * @var string
      */
     private $path;
 
+    private $internalDomainsByApp = [];
+
     public function _initialize()
     {
         parent::_initialize();
 
-        $this->internalDomains = $this->config['internalDomains'];
+        $this->internalDomainsByApp = $this->config['internalDomains'];
     }
 
     public function _beforeStep(Step $step)
@@ -68,6 +74,13 @@ class NetteApplicationModule extends Framework
             return $this->getModule(NetteDIModule::class)->getContainer($test);
         });
         $this->client->followRedirects($this->config['followRedirects']);
+
+        $appAnnotation = $test->getMetadata()->getParam('app');
+        $this->activeApplication = is_array($appAnnotation) ? $appAnnotation[0] : 'ulozto';
+
+        // each testcase can have different internal domains according to its @app
+        // @see self::redirectIfNecessary
+        $this->internalDomains = null;
 
         parent::_before($test);
     }
@@ -138,4 +151,34 @@ class NetteApplicationModule extends Framework
         }
         $this->overridenServices[$name] = $fakeService;
     }
+
+    protected function getInternalDomains(): array
+    {
+        if (!isset($this->activeApplication) || !isset($this->internalDomainsByApp[$this->activeApplication])) {
+            throw new \RuntimeException('Unknown or incorrectly set active application ('.$this->activeApplication.').');
+        }
+        return $this->internalDomainsByApp[$this->activeApplication];
+    }
+
+	/**
+	 * @param Crawler $result
+	 * @param int $maxRedirects
+	 * @param int $redirectCount
+	 * @return mixed
+	 * @throws ExternalUrlException
+	 */
+	protected function redirectIfNecessary($result, $maxRedirects, $redirectCount)
+	{
+		$status = $this->client->getInternalResponse()->getStatus();
+		$location = $this->client->getInternalResponse()->getHeader('Location');
+		if ($status >= 300 && $status < 400) {
+			if (preg_match('#^(//|https?://(?!localhost))#', $location)) {
+				$hostname = parse_url($location, PHP_URL_HOST);
+				if (!$this->isInternalDomain($hostname)) {
+					throw new ExternalUrlException(get_class($this) . " can't open external URL: " . $location);
+				}
+			}
+		}
+		return parent::redirectIfNecessary($result, $maxRedirects, $redirectCount);
+	}
 }
