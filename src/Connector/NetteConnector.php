@@ -51,7 +51,7 @@ class NetteConnector extends Client
      *
      * @return Response
      */
-    public function doRequest($request)
+    public function doRequest($request): Response
     {
         $originScriptName = $_SERVER['SCRIPT_NAME'];
 
