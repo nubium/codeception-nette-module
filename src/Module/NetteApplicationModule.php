@@ -34,7 +34,7 @@ class NetteApplicationModule extends Framework
         'followRedirects' => true,
     ];
 
-    protected $requiredFields = ['internalDomains'];
+    protected $requiredFields = ['internalDomains', 'server'];
 
     protected $overridenServices = [];
 
@@ -47,11 +47,17 @@ class NetteApplicationModule extends Framework
 
     private $internalDomainsByApp = [];
 
+	/**
+	 * @var mixed[]
+	 */
+    private $server = [];
+
     public function _initialize()
     {
         parent::_initialize();
 
         $this->internalDomainsByApp = $this->config['internalDomains'];
+        $this->server = $this->config['server'];
     }
 
     public function _beforeStep(Step $step)
@@ -86,7 +92,7 @@ class NetteApplicationModule extends Framework
     }
 
     protected function createNetteConnector():NetteConnector {
-        return new NetteConnector();
+        return new NetteConnector($this->server);
     }
 
     public function _after(TestInterface $test)
