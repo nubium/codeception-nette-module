@@ -98,10 +98,7 @@ class Request extends HttpRequest implements IRequest
 
     public function getRawBody()
     {
-        if ($this->isMethod('PUT')) {
-            return static::$rawContent;
-        }
-        return $this->request->getRawBody();
+        return static::$rawContent;
     }
 
     public function getRemoteAddress()
