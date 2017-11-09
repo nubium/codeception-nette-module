@@ -77,7 +77,7 @@ class NetteApplicationModule extends Framework
         $this->configFiles = null;
         $this->client = $this->createNetteConnector();
         $this->client->setContainerAccessor(function () use ($test) {
-            return $this->getModule(NetteDIModule::class)->getContainer($test);
+            return $this->getModule(NetteDIModule::class)->createContainer($test);
         });
         $this->client->followRedirects($this->config['followRedirects']);
 

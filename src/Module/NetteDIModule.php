@@ -139,7 +139,7 @@ class NetteDIModule extends Module
         }
     }
 
-    public function createContainer(TestInterface $test):Container
+    public function createContainer(TestInterface $test): Container
     {
         $config = $test->getMetadata()->getParam('config');
 
