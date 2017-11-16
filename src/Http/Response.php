@@ -25,7 +25,7 @@ class Response extends Object implements IResponse
     /**
      * @var int
      */
-    private $code = self::S200_OK;
+    protected $code = self::S200_OK;
 
     /**
      * @var array
