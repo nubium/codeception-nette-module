@@ -22,6 +22,11 @@ use Nette\Http\RequestFactory;
 class Request extends HttpRequest implements IRequest
 {
     /**
+     * @var null|string
+     */
+    public static $rawContent = null;
+
+    /**
      * @var RequestFactory
      */
     private $factory;
@@ -93,7 +98,7 @@ class Request extends HttpRequest implements IRequest
 
     public function getRawBody()
     {
-        return $this->request->getRawBody();
+        return static::$rawContent;
     }
 
     public function getRemoteAddress()

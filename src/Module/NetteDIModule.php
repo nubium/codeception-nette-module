@@ -11,6 +11,7 @@
 namespace Arachne\Codeception\Module;
 
 use Codeception\Module;
+use Codeception\Step;
 use Codeception\TestInterface;
 use Nette\Caching\Storages\IJournal;
 use Nette\Caching\Storages\SQLiteJournal;
@@ -19,6 +20,7 @@ use Nette\DI\Container;
 use Nette\DI\MissingServiceException;
 use Nette\Http\Session;
 use Nette\Utils\FileSystem;
+use Nodus\Diagnostics\Debugger;
 use ReflectionProperty;
 
 class NetteDIModule extends Module
@@ -67,6 +69,14 @@ class NetteDIModule extends Module
         $tempDir = $this->path.'/'.$this->config['tempDir'];
         FileSystem::delete(realpath($tempDir));
         FileSystem::createDir($tempDir);
+    }
+
+    public function _afterStep(Step $step)
+    {
+        if (is_null($this->container)) {
+            return;
+        }
+
         $this->container = null;
     }
 
@@ -74,7 +84,10 @@ class NetteDIModule extends Module
     {
         if ($this->container) {
             try {
-                $this->container->getByType(Session::class)->close();
+                $session = $this->container->getByType(Session::class);
+                if ($session->isStarted()) {
+                    $session->destroy();
+                }
             } catch (MissingServiceException $e) {
             }
 
@@ -88,7 +101,7 @@ class NetteDIModule extends Module
             } catch (MissingServiceException $e) {
             }
 
-            FileSystem::delete(realpath($this->container->getParameters()['tempDir']));
+//            FileSystem::delete(realpath($this->container->getParameters()['tempDir']));
         }
     }
 
@@ -103,10 +116,10 @@ class NetteDIModule extends Module
     /**
      * @return Container
      */
-    public function getContainer()
+    public function getContainer(TestInterface $test):Container
     {
         if (!$this->container) {
-            $this->createContainer();
+            $this->createContainer($test);
         }
 
         return $this->container;
@@ -126,9 +139,11 @@ class NetteDIModule extends Module
         }
     }
 
-    private function createContainer()
+    public function createContainer(TestInterface $test): Container
     {
-        $configurator = new $this->config['configurator']();
+        $config = $test->getMetadata()->getParam('config');
+
+        $configurator = $this->createConfigurator($test);
         if ($this->config['removeDefaultExtensions']) {
             $configurator->defaultExtensions = [
                 'extensions' => 'Nette\DI\Extensions\ExtensionsExtension',
@@ -141,15 +156,10 @@ class NetteDIModule extends Module
             $configurator->enableDebugger($logDir);
         }
 
-        $configurator->addParameters([
-            'appDir' => $this->path.($this->config['appDir'] ? '/'.$this->config['appDir'] : ''),
-            'wwwDir' => $this->path.($this->config['wwwDir'] ? '/'.$this->config['wwwDir'] : ''),
-        ]);
-
-        $tempDir = $this->path.'/'.$this->config['tempDir'];
-        FileSystem::delete($tempDir);
-        FileSystem::createDir($tempDir);
-        $configurator->setTempDirectory($tempDir);
+//        $tempDir = $this->path.'/'.$this->config['tempDir'];
+//        FileSystem::delete($tempDir);
+//        FileSystem::createDir($tempDir);
+//        $configurator->setTempDirectory($tempDir);
 
         if ($this->config['debugMode'] !== null) {
             $configurator->setDebugMode($this->config['debugMode']);
@@ -160,10 +170,78 @@ class NetteDIModule extends Module
             $configurator->addConfig(FileSystem::isAbsolute($file) ? $file : $this->path.'/'.$file);
         }
 
+        // specific test custom config
+        if (is_array($config)) {
+            foreach ($config as $configItem) {
+                if ($configItem === "") {
+                    $filename = substr($test->getMetadata()->getFilename(), 0, -4).'.neon';
+                    $configurator->addConfig($filename);
+                } else {
+                    $items = explode(' ', $configItem);
+                    $filename = dirname($test->getMetadata()->getFilename()) . '/' . array_pop($items);
+                    $configurator->addConfig($filename);
+                }
+            }
+        }
+
         $this->container = $configurator->createContainer();
 
         foreach ($this->onCreateContainer as $callback) {
             $callback($this->container);
         }
+
+        return $this->container;
     }
+
+    private function createConfigurator(TestInterface $test): Configurator
+    {
+        $appAnnotation = $test->getMetadata()->getParam('app');
+        $application = is_array($appAnnotation) ? $appAnnotation[0] : 'ulozto';
+
+        switch ($application) {
+
+            case 'pornfile':
+                $configurator = new \PornFile\Application\Configurator(true);
+                $configurator->enableDebugger(WWW_DIR . '/PornFile/log');
+                $configurator->addParameters([
+                    'appDir' => WWW_DIR . '/PornFile/App',
+                    'wwwDir' => WWW_DIR,
+                ]);
+                break;
+
+            case 'admin':
+                $configurator = new \Admin\Application\Configurator(true);
+                $configurator->enableDebugger(WWW_DIR . '/Admin/log');
+                $configurator->addParameters([
+                    'appDir' => WWW_DIR . '/Admin/App',
+                    'wwwDir' => WWW_DIR,
+                ]);
+                break;
+
+            case 'api':
+                $configurator = new \Api\Application\Configurator(true);
+                $configurator->enableDebugger(WWW_DIR . '/Api/log');
+                $configurator->addParameters([
+                    'appDir' => WWW_DIR . '/Api/App',
+                    'wwwDir' => WWW_DIR,
+                ]);
+                break;
+            case '':
+            case 'ulozto':
+                $configurator = new \Ulozto\Application\Configurator(true);
+                $configurator->enableDebugger(WWW_DIR . '/Ulozto/log');
+                $configurator->addParameters([
+                'appDir' => WWW_DIR . '/Ulozto/App',
+                'wwwDir' => WWW_DIR,
+            ]);
+            break;
+
+            default:
+                throw new \InvalidArgumentException('Unknown application code: '.$application. '. Allowed values are ulozto, pornfile, admin, api.');
+        }
+
+        error_reporting(E_ALL ^ E_USER_DEPRECATED);
+        return $configurator;
+    }
+
 }

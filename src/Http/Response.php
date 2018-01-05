@@ -24,7 +24,7 @@ class Response implements IResponse
     /**
      * @var int
      */
-    private $code = self::S200_OK;
+    protected $code = self::S200_OK;
 
     /**
      * @var array
@@ -167,6 +167,8 @@ class Response implements IResponse
      */
     public function setCookie($name, $value, $time, $path = null, $domain = null, $secure = null, $httpOnly = null)
     {
+        $this->addHeader('Set-Cookie', $name . '=' . $value . '; Expires=' . date('c', $time));
+
         return $this;
     }
 
