@@ -201,8 +201,9 @@ class NetteDIModule extends Module
         switch ($application) {
 
             case 'pornfile':
-                $configurator = new \PornFile\Application\Configurator(true);
-                $configurator->enableDebugger(WWW_DIR . '/PornFile/log');
+                $configurator = new \PornFile\Application\Configurator(true, false);
+                \Nette\Utils\FileSystem::createDir(LOG_DIR . '/pornfile');
+                $configurator->enableDebugger(LOG_DIR . '/pornfile');
                 $configurator->addParameters([
                     'appDir' => WWW_DIR . '/PornFile/App',
                     'wwwDir' => WWW_DIR,
@@ -210,8 +211,9 @@ class NetteDIModule extends Module
                 break;
 
             case 'admin':
-                $configurator = new \Admin\Application\Configurator(true);
-                $configurator->enableDebugger(WWW_DIR . '/Admin/log');
+                $configurator = new \Admin\Application\Configurator(true, false);
+                \Nette\Utils\FileSystem::createDir(LOG_DIR . '/admin');
+                $configurator->enableDebugger(LOG_DIR . '/admin');
                 $configurator->addParameters([
                     'appDir' => WWW_DIR . '/Admin/App',
                     'wwwDir' => WWW_DIR,
@@ -219,8 +221,9 @@ class NetteDIModule extends Module
                 break;
 
             case 'api':
-                $configurator = new \Api\Application\Configurator(true);
-                $configurator->enableDebugger(WWW_DIR . '/Api/log');
+                $configurator = new \Api\Application\Configurator(true, false);
+                \Nette\Utils\FileSystem::createDir(LOG_DIR . '/api');
+                $configurator->enableDebugger(LOG_DIR . '/api');
                 $configurator->addParameters([
                     'appDir' => WWW_DIR . '/Api/App',
                     'wwwDir' => WWW_DIR,
@@ -228,12 +231,13 @@ class NetteDIModule extends Module
                 break;
             case '':
             case 'ulozto':
-                $configurator = new \Ulozto\Application\Configurator(true);
-                $configurator->enableDebugger(WWW_DIR . '/Ulozto/log');
+                $configurator = new \Ulozto\Application\Configurator(true, false);
+                \Nette\Utils\FileSystem::createDir(LOG_DIR . '/ulozto');
+                $configurator->enableDebugger(LOG_DIR . '/ulozto');
                 $configurator->addParameters([
-                'appDir' => WWW_DIR . '/Ulozto/App',
-                'wwwDir' => WWW_DIR,
-            ]);
+                    'appDir' => WWW_DIR . '/Ulozto/App',
+                    'wwwDir' => WWW_DIR,
+                ]);
             break;
 
             default:
