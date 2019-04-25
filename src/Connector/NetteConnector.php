@@ -12,6 +12,7 @@ namespace Arachne\Codeception\Connector;
 
 use Arachne\Codeception\Http\Request as HttpRequest;
 use Arachne\Codeception\Http\Response as HttpResponse;
+use Contributte\Middlewares\Application\IApplication;
 use Exception;
 use Nette\Application\Application;
 use Nette\DI\Container;
@@ -101,9 +102,15 @@ class NetteConnector extends Client
         $httpRequest->reset();
         $httpResponse->reset();
 
+        // fallback for contributte/middleware
+        $app = $container->getByType(\Contributte\Middlewares\Application\IApplication::class, false);
+        if (!$app) {
+            $app = $container->getByType(Application::class);
+        }
+
         try {
             ob_start();
-            $container->getByType(Application::class)->run();
+            $app->run();
             $content = ob_get_clean();
         } catch (Exception $e) {
             ob_end_clean();

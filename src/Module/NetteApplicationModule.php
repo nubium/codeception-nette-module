@@ -47,9 +47,9 @@ class NetteApplicationModule extends Framework
 
     private $internalDomainsByApp = [];
 
-	/**
-	 * @var mixed[]
-	 */
+    /**
+     * @var mixed[]
+     */
     private $server = [];
 
     public function _initialize()
@@ -166,25 +166,25 @@ class NetteApplicationModule extends Framework
         return $this->internalDomainsByApp[$this->activeApplication];
     }
 
-	/**
-	 * @param Crawler $result
-	 * @param int $maxRedirects
-	 * @param int $redirectCount
-	 * @return mixed
-	 * @throws ExternalUrlException
-	 */
-	protected function redirectIfNecessary($result, $maxRedirects, $redirectCount)
-	{
-		$status = $this->client->getInternalResponse()->getStatus();
-		$location = $this->client->getInternalResponse()->getHeader('Location');
-		if ($status >= 300 && $status < 400) {
-			if (preg_match('#^(//|https?://(?!localhost))#', $location)) {
-				$hostname = parse_url($location, PHP_URL_HOST);
-				if (!$this->isInternalDomain($hostname)) {
-					throw new ExternalUrlException(get_class($this) . " can't open external URL: " . $location);
-				}
-			}
-		}
-		return parent::redirectIfNecessary($result, $maxRedirects, $redirectCount);
-	}
+    /**
+     * @param Crawler $result
+     * @param int $maxRedirects
+     * @param int $redirectCount
+     * @return mixed
+     * @throws ExternalUrlException
+     */
+    protected function redirectIfNecessary($result, $maxRedirects, $redirectCount)
+    {
+        $status = $this->client->getInternalResponse()->getStatus();
+        $location = $this->client->getInternalResponse()->getHeader('Location');
+        if ($status >= 300 && $status < 400) {
+            if (preg_match('#^(//|https?://(?!localhost))#', $location)) {
+                $hostname = parse_url($location, PHP_URL_HOST);
+                if (!$this->isInternalDomain($hostname)) {
+                    throw new ExternalUrlException(get_class($this) . " can't open external URL: " . $location);
+                }
+            }
+        }
+        return parent::redirectIfNecessary($result, $maxRedirects, $redirectCount);
+    }
 }

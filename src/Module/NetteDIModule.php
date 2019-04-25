@@ -10,6 +10,7 @@
 
 namespace Arachne\Codeception\Module;
 
+use Api2\Configurator\ConfiguratorFactory;
 use Codeception\Module;
 use Codeception\Step;
 use Codeception\TestInterface;
@@ -229,6 +230,14 @@ class NetteDIModule extends Module
                     'wwwDir' => WWW_DIR,
                 ]);
                 break;
+
+            case 'api2':
+                \Nette\Utils\FileSystem::createDir(LOG_DIR . '/api2');
+                $configuratorFactory = new ConfiguratorFactory();
+                $configurator = $configuratorFactory->createForDocker('test', LOG_DIR . '/api2');
+                $configurator->enableDebugger(LOG_DIR . '/api2');
+                break;
+
             case '':
             case 'ulozto':
                 $configurator = new \Ulozto\Application\Configurator(true, false);
