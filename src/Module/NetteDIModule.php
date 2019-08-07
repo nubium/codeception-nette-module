@@ -20,8 +20,8 @@ use Nette\Configurator;
 use Nette\DI\Container;
 use Nette\DI\MissingServiceException;
 use Nette\Http\Session;
+use Nette\InvalidStateException;
 use Nette\Utils\FileSystem;
-use Nodus\Diagnostics\Debugger;
 use ReflectionProperty;
 
 class NetteDIModule extends Module
@@ -131,10 +131,14 @@ class NetteDIModule extends Module
      *
      * @return object
      */
-    public function grabService($service)
+    public function grabService(string $service)
     {
+        if (!$this->container) {
+            throw new InvalidStateException('Container has not been created yet');
+        }
+
         try {
-            return $this->getContainer()->getByType($service);
+            return $this->container->getByType($service);
         } catch (MissingServiceException $e) {
             $this->fail($e->getMessage());
         }
