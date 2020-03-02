@@ -63,6 +63,8 @@ class NetteConnector extends Client
         // see https://github.com/sebastianbergmann/phpunit/blob/cdcb7376a773beac6dd0cd4b38bb5901e8534035/src/Util/Filter.php#L31
         $_SERVER['SCRIPT_NAME'] = $originScriptName;
 
+        $_SERVER['HTTPS'] = $request->getServer()['HTTPS'] ? 'on' : 'off';
+
         $_SERVER['HTTP_HOST'] = parse_url($request->getUri(), PHP_URL_HOST);
         $_SERVER['REQUEST_METHOD'] = $method = strtoupper($request->getMethod());
         $_SERVER['REQUEST_URI'] = preg_replace('~https?://[^/]+~', '', $request->getUri());
